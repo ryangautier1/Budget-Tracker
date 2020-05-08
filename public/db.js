@@ -13,6 +13,7 @@ request.onupgradeneeded = event => {
 request.onsuccess = () => {
   const db = request.result;
   if (navigator.onLine) {
+    var done = true;
     const transaction = db.transaction(["waiting"], "readwrite");
     const budgetStore = transaction.objectStore("waiting");
 
@@ -24,15 +25,17 @@ request.onsuccess = () => {
       if (cursor) {
         items.push(cursor.value);
         cursor.continue();
+        done = false;
       } else {
         console.log("No documents left");
+        done = true;
       }
     };
     // const items = budgetStore.getAll();
 
     // items.onsuccess = function () {
     // if the db is done being read
-    if (!cursor) {
+    if (done) {
       if (items.result.length > 0) {
         fetch("/api/transaction/bulk", {
           method: "POST",
@@ -60,6 +63,7 @@ function saveRecord(item) {
 
 // when back online, check for new data in db
 window.addEventListener("online", function () {
+  var done = true;
   const transaction = db.transaction(["waiting"], "readwrite");
   const budgetStore = transaction.objectStore("waiting");
 
@@ -71,13 +75,15 @@ window.addEventListener("online", function () {
     if (cursor) {
       items.push(cursor.value);
       cursor.continue();
+      done = false;
     } else {
       console.log("No documents left");
+      done = true;
     }
   };
 
   // if the db is done being read
-  if (!cursor) {
+  if (done) {
     if (items.result.length > 0) {
       fetch("/api/transaction/bulk", {
         method: "POST",
