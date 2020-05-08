@@ -13,29 +13,13 @@ request.onupgradeneeded = event => {
 request.onsuccess = () => {
   const db = request.result;
   if (navigator.onLine) {
-    var done = true;
     const transaction = db.transaction(["waiting"], "readwrite");
     const budgetStore = transaction.objectStore("waiting");
 
-    // initialize items array to be filled with db data
-    const items = [];
-    const getCursorRequest = budgetStore.openCursor();
-    getCursorRequest.onsuccess = event => {
-      const cursor = event.target.result;
-      if (cursor) {
-        items.push(cursor.value);
-        cursor.continue();
-        done = false;
-      } else {
-        console.log("No documents left");
-        done = true;
-      }
-    };
-    // const items = budgetStore.getAll();
+    const items = budgetStore.getAll();
 
-    // items.onsuccess = function () {
-    // if the db is done being read
-    if (done) {
+    items.onsuccess = function () {
+      // if the db is done being read
       if (items.result.length > 0) {
         fetch("/api/transaction/bulk", {
           method: "POST",
@@ -56,6 +40,8 @@ request.onsuccess = () => {
 };
 
 function saveRecord(item) {
+  const db = request.result;
+
   const transaction = db.transaction(["waiting"], "readwrite");
   const budgetStore = transaction.objectStore("waiting");
   budgetStore.add(item);
@@ -63,27 +49,15 @@ function saveRecord(item) {
 
 // when back online, check for new data in db
 window.addEventListener("online", function () {
-  var done = true;
   const transaction = db.transaction(["waiting"], "readwrite");
   const budgetStore = transaction.objectStore("waiting");
 
   // initialize items array to be filled with db data
-  const items = [];
-  const getCursorRequest = budgetStore.openCursor();
-  getCursorRequest.onsuccess = event => {
-    const cursor = event.target.result;
-    if (cursor) {
-      items.push(cursor.value);
-      cursor.continue();
-      done = false;
-    } else {
-      console.log("No documents left");
-      done = true;
-    }
-  };
+  const items = budgetStore.getAll();
 
-  // if the db is done being read
-  if (done) {
+  items.onsuccess = function () {
+    // if the db is done being read
+
     if (items.result.length > 0) {
       fetch("/api/transaction/bulk", {
         method: "POST",
