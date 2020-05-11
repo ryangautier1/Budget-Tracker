@@ -1,18 +1,19 @@
 const FILES_TO_CACHE = [
   "/",
   "/index.html",
+  "/db.js",
   "/styles.css",
   "/icons/icon-192x192.png",
-  "/icons/icon-192x192.png",
+  "/icons/icon-512x512.png",
   "/index.js",
   "/manifest.webmanifest"
 ];
 
-const CACHE_NAME = "static-cache-v2";
+const CACHE_NAME = "budget-cache-v1";
 const DATA_CACHE_NAME = "data-cache-v1";
 
 // install
-self.addEventListener("install", function(event) {
+self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
       console.log("Files pre-cached");
@@ -22,13 +23,13 @@ self.addEventListener("install", function(event) {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", function(event) {
+self.addEventListener("activate", function (event) {
   event.waitUntil(
     caches.keys().then(keyList => {
       return Promise.all(
         keyList.map(key => {
           if (key !== CACHE_NAME && key !== DATA_CACHE_NAME) {
-            console.log("Old cache data removed" , key);
+            console.log("Old cache data removed", key);
             return caches.delete(key);
           }
         })
@@ -39,29 +40,36 @@ self.addEventListener("activate", function(event) {
 });
 
 // fetch
-self.addEventListener("fetch", function(event) {
+self.addEventListener("fetch", function (event) {
   if (event.request.url.includes("/api")) {
     event.respondWith(
-      cahces.open(DATA_CACHE_NAME).then(cahce => {
+      caches.open(DATA_CACHE_NAME).then(cache => {
         return fetch(event.request)
-        .then(response => {
-          if (response.status === 200) {
-            cache.put(event.request.url, response.clone());
-          }
+          .then(response => {
+            if (response.status === 200) {
+              cache.put(event.request.url, response.clone());
+            }
 
-          return response;
-        })
-        .catch(err => {
-          return cache.match(event.request);
-        });
+            return response;
+          })
+          .catch(err => {
+            return cache.match(event.request);
+          });
       }).catch(err => console.log(err))
     );
     return;
   }
 
   event.respondWith(
-    caches.match(event.request).then(function(response) {
-      return response || fetch(evt.request);
+    fetch(event.request).catch(() => {
+      return caches.match(event.request).then(res => {
+        if (res) {
+          return res
+        }
+        else if (event.request.headers.get("accept").includes("text/html")) {
+          return caches.match("/");
+        }
+      });
     })
   );
 });
