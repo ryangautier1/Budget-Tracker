@@ -22,4 +22,4 @@ THEN that will be shown on the page, and added to their transaction history when
 https://fast-escarpment-22029.herokuapp.com/
 
 ## Screenshot of Application
-![Screenshot of Application](screenshot.png)
+![Screenshot of Application](screenshot.PNG)
